@@ -16,8 +16,11 @@ export const initSpeechRecognition = (
 
   let hasEmittedStart = false;
 
+  let isExplicitlyStopped = false;
+
   recognition.onstart = () => {
     hasEmittedStart = false;
+    isExplicitlyStopped = false;
   };
 
   recognition.onresult = (event: any) => {
@@ -47,10 +50,25 @@ export const initSpeechRecognition = (
 
   recognition.onerror = (event: any) => {
     console.error("Speech recognition error", event.error);
+    if (event.error === 'not-allowed') {
+      isExplicitlyStopped = true;
+    }
   };
 
   recognition.onend = () => {
     onEnd();
+    if (!isExplicitlyStopped) {
+      try {
+        recognition.start();
+      } catch (e) {}
+    }
+  };
+  
+  // monkey patch stop to set the flag
+  const originalStop = recognition.stop.bind(recognition);
+  recognition.stop = () => {
+    isExplicitlyStopped = true;
+    originalStop();
   };
 
   return recognition;
