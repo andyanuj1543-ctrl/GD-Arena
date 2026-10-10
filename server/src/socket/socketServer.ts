@@ -58,8 +58,15 @@ export function setupSocketServer(httpServer: HttpServer, corsOrigin: string) {
       }
     });
 
+    socket.on('student:speak', (text: string) => {
+      if (orchestrator && text.trim()) {
+        orchestrator.handleStudentSpeech(text);
+      }
+    });
+
     socket.on('student:interrupt', () => {
       playbackQueue.clear();
+      if (orchestrator) orchestrator.handleStudentSpeech(""); // signal interrupt to orchestrator
       socket.emit('ai:stopped', { speaker: playbackQueue.getCurrentSpeaker() });
     });
     

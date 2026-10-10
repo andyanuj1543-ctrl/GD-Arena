@@ -46,6 +46,7 @@ export default function GDRoomPage() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const audioPlayerRef = useRef<AudioPlayer | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     const player = new AudioPlayer((speakerId) => {
@@ -58,6 +59,27 @@ export default function GDRoomPage() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaStreamRef.current = stream;
         
+        import('../audio/SpeechRecognition').then(({ initSpeechRecognition }) => {
+          recognitionRef.current = initSpeechRecognition(
+            (text, isFinal) => {
+              if (isFinal && socketRef.current) {
+                socketRef.current.emit('student:speak', text);
+              }
+            },
+            () => {
+              if (socketRef.current) socketRef.current.emit('student:interrupt');
+              if (audioPlayerRef.current) audioPlayerRef.current.interrupt();
+              setActiveSpeaker('student');
+            },
+            () => {
+              setActiveSpeaker((prev) => prev === 'student' ? null : prev);
+            }
+          );
+          
+          if (isMicOn && recognitionRef.current) {
+             recognitionRef.current.start();
+          }
+        });
         const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
         audioContextRef.current = new AudioCtx();
         analyserRef.current = audioContextRef.current.createAnalyser();
@@ -195,7 +217,7 @@ export default function GDRoomPage() {
 
   const toggleMic = () => {
     if (micPermissionDenied) {
-      alert("Microphone permission is denied. Please enable it in your browser settings.");
+      alert("Microphone permission is denied. Please enable it in your browser settings or click the camera icon in the URL bar.");
       return;
     }
     const nextState = !isMicOn;
@@ -205,8 +227,19 @@ export default function GDRoomPage() {
         track.enabled = nextState;
       });
     }
-    if (nextState && activeSpeaker && activeSpeaker !== 'student') {
-      socketRef.current?.emit('student:interrupt');
+    
+    if (nextState) {
+      try {
+        recognitionRef.current?.start();
+      } catch (e) {} // ignore if already started
+      if (activeSpeaker && activeSpeaker !== 'student') {
+        socketRef.current?.emit('student:interrupt');
+        audioPlayerRef.current?.interrupt();
+      }
+    } else {
+      try {
+        recognitionRef.current?.stop();
+      } catch (e) {}
     }
   };
 

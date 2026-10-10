@@ -49,12 +49,15 @@ export class DiscussionOrchestrator extends EventEmitter {
 
   handleStudentSpeech(text: string) {
     if (this.phase === 'ENDED') return;
-    this.transcriptManager.addEntry('Student', 'student', text);
-    this.emit('transcript:final', this.transcriptManager.getRecentEntries(1)[0]);
     
-    // AI responds to student
-    if (!this.isProcessingTurn) {
-      setTimeout(() => this.triggerNextTurn(['student']), 1000);
+    if (text.trim()) {
+      this.transcriptManager.addEntry('Student', 'student', text);
+      this.emit('transcript:final', this.transcriptManager.getRecentEntries(1)[0]);
+    }
+    
+    // AI responds to student (wait a bit to let the user finish if they are continuing)
+    if (!this.isProcessingTurn && text.trim()) {
+      setTimeout(() => this.triggerNextTurn(['student']), 1500);
     }
   }
   
