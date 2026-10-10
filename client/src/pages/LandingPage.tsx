@@ -24,7 +24,9 @@ const LandingPage: React.FC = () => {
         </h1>
         
         <p className="font-sans text-lg md:text-xl text-stone-200 max-w-xl mb-12 leading-relaxed drop-shadow-lg font-medium">
-          Practice group discussions with a full panel. Speak up, get challenged, walk out sharper.
+          <span className="underline decoration-wavy decoration-amber-cta decoration-[3px] underline-offset-8">
+            Practice group discussions with a full panel. Speak up, get challenged, walk out sharper.
+          </span>
         </p>
 
         <div className="flex flex-col items-center">
