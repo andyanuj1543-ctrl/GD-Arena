@@ -1,10 +1,15 @@
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from './config/index.js';
 import { logger } from './utils/logger.js';
 import { setupSocketServer } from './socket/socketServer.js';
 import { voiceManager } from './participants/voiceManager.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -28,6 +33,14 @@ app.get('/api/report/:sessionId', (req, res) => {
 
 app.post('/api/ephemeral-token', (req, res) => {
   res.json({ token: 'mock-token-for-live-api' });
+});
+
+// Serve static frontend files in production
+const clientBuildPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientBuildPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
 // Initialize socket server
